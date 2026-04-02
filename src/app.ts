@@ -2,9 +2,9 @@ import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { env } from "./config/env";
-import { errorHandler } from "./middleware/errorHandler";
-import { requestLogger } from "./middleware/requestLogger";
+import { env } from "./config/env.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { requestLogger } from "./middleware/requestLogger.js";
 
 /**
  * Initialize Express app

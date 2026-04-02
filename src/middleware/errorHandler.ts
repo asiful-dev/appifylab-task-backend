@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { AppError } from "../utils/errorTypes";
-import { env } from "../config/env";
+import { AppError } from "../utils/errorTypes.js";
+import { env } from "../config/env.js";
 
 /**
  * Global error handler middleware
