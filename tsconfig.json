@@ -23,17 +23,6 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": "./src",
-    "paths": {
-      "@/*": ["./*"],
-      "@config/*": ["./config/*"],
-      "@middleware/*": ["./middleware/*"],
-      "@services/*": ["./services/*"],
-      "@controllers/*": ["./controllers/*"],
-      "@utils/*": ["./utils/*"],
-      "@db/*": ["./db/*"],
-      "@types/*": ["./types/*"]
-    },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
