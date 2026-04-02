@@ -7,7 +7,6 @@ dist
 .gitignore
 .prettierrc
 .eslintrc.json
-tsconfig.json
 drizzle.config.ts
 README.md
 .vscode
