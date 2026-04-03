@@ -277,6 +277,109 @@ const options: swaggerJsdoc.Options = {
             visibility: { type: 'string', enum: ['public', 'private'] },
           },
         },
+        CreateCommentRequest: {
+          type: 'object',
+          required: ['content'],
+          properties: {
+            content: { type: 'string', example: 'Nice post!' },
+          },
+        },
+        CommentAuthor: {
+          type: 'object',
+          required: ['id', 'firstName', 'lastName'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            firstName: { type: 'string', example: 'Asiful' },
+            lastName: { type: 'string', example: 'Islam' },
+            profileImageUrl: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.supabase.co/storage/v1/object/public/avatars/path.png',
+            },
+          },
+        },
+        CommentItem: {
+          type: 'object',
+          required: ['id', 'postId', 'authorId', 'likeCount', 'createdAt', 'updatedAt', 'author'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            postId: { type: 'string', format: 'uuid' },
+            authorId: { type: 'string', format: 'uuid' },
+            parentId: { type: 'string', format: 'uuid', nullable: true },
+            content: { type: 'string', example: 'Nice post!' },
+            likeCount: { type: 'integer', example: 2 },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+            author: { $ref: '#/components/schemas/CommentAuthor' },
+          },
+        },
+        CommentsData: {
+          type: 'object',
+          required: ['comments'],
+          properties: {
+            comments: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/CommentItem' },
+            },
+          },
+        },
+        RepliesData: {
+          type: 'object',
+          required: ['replies'],
+          properties: {
+            replies: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/CommentItem' },
+            },
+          },
+        },
+        CommentData: {
+          type: 'object',
+          required: ['comment'],
+          properties: {
+            comment: { $ref: '#/components/schemas/CommentItem' },
+          },
+        },
+        ReplyData: {
+          type: 'object',
+          required: ['reply'],
+          properties: {
+            reply: { $ref: '#/components/schemas/CommentItem' },
+          },
+        },
+        ToggleLikeData: {
+          type: 'object',
+          required: ['liked', 'likeCount'],
+          properties: {
+            liked: { type: 'boolean', example: true },
+            likeCount: { type: 'integer', example: 10 },
+          },
+        },
+        LikeUserItem: {
+          type: 'object',
+          required: ['id', 'firstName', 'lastName', 'likedAt'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            firstName: { type: 'string', example: 'Asiful' },
+            lastName: { type: 'string', example: 'Islam' },
+            profileImageUrl: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.supabase.co/storage/v1/object/public/avatars/path.png',
+            },
+            likedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        LikeUsersData: {
+          type: 'object',
+          required: ['users'],
+          properties: {
+            users: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/LikeUserItem' },
+            },
+          },
+        },
         SuccessAuthSessionResponse: {
           type: 'object',
           required: ['success', 'data'],
@@ -323,6 +426,57 @@ const options: swaggerJsdoc.Options = {
           properties: {
             success: { type: 'boolean', example: true },
             data: { $ref: '#/components/schemas/FeedData' },
+            meta: { $ref: '#/components/schemas/FeedMeta' },
+          },
+        },
+        SuccessCommentResponse: {
+          type: 'object',
+          required: ['success', 'data'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/CommentData' },
+          },
+        },
+        SuccessReplyResponse: {
+          type: 'object',
+          required: ['success', 'data'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/ReplyData' },
+          },
+        },
+        SuccessCommentsResponse: {
+          type: 'object',
+          required: ['success', 'data', 'meta'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/CommentsData' },
+            meta: { $ref: '#/components/schemas/FeedMeta' },
+          },
+        },
+        SuccessRepliesResponse: {
+          type: 'object',
+          required: ['success', 'data', 'meta'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/RepliesData' },
+            meta: { $ref: '#/components/schemas/FeedMeta' },
+          },
+        },
+        SuccessToggleLikeResponse: {
+          type: 'object',
+          required: ['success', 'data'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/ToggleLikeData' },
+          },
+        },
+        SuccessLikeUsersResponse: {
+          type: 'object',
+          required: ['success', 'data', 'meta'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/LikeUsersData' },
             meta: { $ref: '#/components/schemas/FeedMeta' },
           },
         },
