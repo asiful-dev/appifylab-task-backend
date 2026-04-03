@@ -27,13 +27,13 @@ export class NotFoundError extends AppError {
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message = "Unauthorized") {
+  constructor(message = 'Unauthorized') {
     super(message, 401);
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = "Access denied") {
+  constructor(message = 'Access denied') {
     super(message, 403);
   }
 }
@@ -45,7 +45,7 @@ export class ConflictError extends AppError {
 }
 
 export class TooManyRequestsError extends AppError {
-  constructor(message = "Too many requests") {
+  constructor(message = 'Too many requests') {
     super(message, 429);
   }
 }

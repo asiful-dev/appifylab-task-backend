@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { env } from "../config/env.js";
-import { UnauthorizedError } from "../utils/errorTypes.js";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
+import { UnauthorizedError } from '../utils/errorTypes.js';
 
 export interface AuthUser {
   id: string;
@@ -19,16 +19,12 @@ declare global {
 /**
  * Verify JWT access token
  */
-export const authenticateToken = (
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1]; // Bearer <token>
+export const authenticateToken = (req: Request, _res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.split(' ')[1]; // Bearer <token>
 
   if (!token) {
-    return next(new UnauthorizedError("Missing access token"));
+    return next(new UnauthorizedError('Missing access token'));
   }
 
   try {
@@ -40,22 +36,18 @@ export const authenticateToken = (
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      return next(new UnauthorizedError("Access token expired"));
+      return next(new UnauthorizedError('Access token expired'));
     }
-    next(new UnauthorizedError("Invalid access token"));
+    next(new UnauthorizedError('Invalid access token'));
   }
 };
 
 /**
  * Optional authentication - sets req.user if token is valid, but doesn't fail if missing
  */
-export const optionalAuth = (
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1];
+export const optionalAuth = (req: Request, _res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.split(' ')[1];
 
   if (token) {
     try {

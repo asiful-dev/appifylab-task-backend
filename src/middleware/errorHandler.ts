@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import { AppError } from "../utils/errorTypes.js";
-import { env } from "../config/env.js";
+import { Request, Response, NextFunction } from 'express';
+import { AppError } from '../utils/errorTypes.js';
+import { env } from '../config/env.js';
 
 /**
  * Global error handler middleware
@@ -12,12 +12,12 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
-  console.error("[Error Handler]", {
+  console.error('[Error Handler]', {
     message: error.message,
     statusCode: error instanceof AppError ? error.statusCode : 500,
     path: req.path,
     method: req.method,
-    ...(env.NODE_ENV === "development" && { stack: error.stack }),
+    ...(env.NODE_ENV === 'development' && { stack: error.stack }),
   });
 
   if (error instanceof AppError) {
@@ -34,9 +34,9 @@ export const errorHandler = (
   res.status(500).json({
     success: false,
     error: {
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Internal server error",
-      ...(env.NODE_ENV === "development" && { details: error.message }),
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Internal server error',
+      ...(env.NODE_ENV === 'development' && { details: error.message }),
     },
   });
 
