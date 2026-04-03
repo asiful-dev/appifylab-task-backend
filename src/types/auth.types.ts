@@ -11,6 +11,15 @@ export interface LoginInput {
   rememberMe?: boolean;
 }
 
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export interface ResetPasswordInput {
+  token: string;
+  newPassword: string;
+}
+
 export interface AuthUserResponse {
   id: string;
   firstName: string;

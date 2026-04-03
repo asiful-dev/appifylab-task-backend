@@ -1,10 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env.js';
+import { createCsrfToken, getCsrfCookieOptions } from '../middleware/csrf.middleware.js';
 import { authService } from '../services/auth.service.js';
-import { LoginInput, RegisterInput } from '../types/auth.types.js';
+import {
+  ForgotPasswordInput,
+  LoginInput,
+  RegisterInput,
+  ResetPasswordInput,
+} from '../types/auth.types.js';
 import { UnauthorizedError } from '../utils/errorTypes.js';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
+const CSRF_COOKIE_NAME = 'csrfToken';
 
 const parseDurationToMs = (value: string) => {
   const match = value.match(/^(\d+)([smhd])$/);
@@ -24,7 +31,7 @@ const parseDurationToMs = (value: string) => {
 const getRefreshCookieConfig = (maxAge: number) => ({
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
+  sameSite: 'strict' as const,
   path: '/api/auth',
   maxAge,
 });
@@ -40,6 +47,7 @@ export const authController = {
         session.tokens.refreshToken,
         getRefreshCookieConfig(parseDurationToMs(env.JWT_REFRESH_EXPIRY)),
       );
+      res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), getCsrfCookieOptions());
 
       res.status(201).json({
         success: true,
@@ -63,6 +71,7 @@ export const authController = {
         : parseDurationToMs(env.JWT_REFRESH_EXPIRY);
 
       res.cookie(REFRESH_COOKIE_NAME, session.tokens.refreshToken, getRefreshCookieConfig(maxAge));
+      res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), getCsrfCookieOptions());
 
       res.status(200).json({
         success: true,
@@ -91,6 +100,7 @@ export const authController = {
         session.tokens.refreshToken,
         getRefreshCookieConfig(parseDurationToMs(env.JWT_REFRESH_EXPIRY)),
       );
+      res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), getCsrfCookieOptions());
 
       res.status(200).json({
         success: true,
@@ -112,12 +122,49 @@ export const authController = {
         REFRESH_COOKIE_NAME,
         getRefreshCookieConfig(parseDurationToMs(env.JWT_REFRESH_EXPIRY)),
       );
+      res.clearCookie(CSRF_COOKIE_NAME, getCsrfCookieOptions());
 
       res.status(200).json({
         success: true,
         data: {
           message: 'Logged out successfully',
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input = req.body as ForgotPasswordInput;
+      const result = await authService.forgotPassword(input);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          message: result.message,
+          ...(env.NODE_ENV !== 'production' && result.resetToken
+            ? {
+                resetToken: result.resetToken,
+                expiresAt: result.expiresAt,
+              }
+            : {}),
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input = req.body as ResetPasswordInput;
+      const result = await authService.resetPassword(input);
+
+      res.status(200).json({
+        success: true,
+        data: result,
       });
     } catch (error) {
       next(error);

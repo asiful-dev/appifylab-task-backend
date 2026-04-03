@@ -42,6 +42,24 @@ const options: swaggerJsdoc.Options = {
             rememberMe: { type: 'boolean', example: false },
           },
         },
+        ForgotPasswordRequest: {
+          type: 'object',
+          required: ['email'],
+          properties: {
+            email: { type: 'string', format: 'email', example: 'asiful@example.com' },
+          },
+        },
+        ResetPasswordRequest: {
+          type: 'object',
+          required: ['token', 'newPassword'],
+          properties: {
+            token: {
+              type: 'string',
+              example: '59f6f24bc7f4c2b03261f4edfffd96ee1409c97ea5ecf7b54a2f14d0a5ca98e2',
+            },
+            newPassword: { type: 'string', example: 'NewStrong@456' },
+          },
+        },
         AuthUser: {
           type: 'object',
           required: ['id', 'firstName', 'lastName', 'email'],

@@ -18,5 +18,21 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().trim().min(20),
+  newPassword: z
+    .string()
+    .min(8)
+    .regex(/[A-Z]/, 'Password must include at least one uppercase letter')
+    .regex(/[0-9]/, 'Password must include at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must include at least one special character'),
+});
+
 export type RegisterSchemaType = z.infer<typeof registerSchema>;
 export type LoginSchemaType = z.infer<typeof loginSchema>;
+export type ForgotPasswordSchemaType = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordSchemaType = z.infer<typeof resetPasswordSchema>;

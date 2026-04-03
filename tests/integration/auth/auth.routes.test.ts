@@ -17,6 +17,8 @@ const registerMock = vi.fn();
 const loginMock = vi.fn();
 const refreshMock = vi.fn();
 const logoutMock = vi.fn();
+const forgotPasswordMock = vi.fn();
+const resetPasswordMock = vi.fn();
 
 vi.mock('../../../src/services/auth.service.js', () => ({
   authService: {
@@ -24,6 +26,8 @@ vi.mock('../../../src/services/auth.service.js', () => ({
     login: loginMock,
     refresh: refreshMock,
     logout: logoutMock,
+    forgotPassword: forgotPasswordMock,
+    resetPassword: resetPasswordMock,
   },
 }));
 
@@ -35,6 +39,8 @@ describe('Auth routes', () => {
     loginMock.mockReset();
     refreshMock.mockReset();
     logoutMock.mockReset();
+    forgotPasswordMock.mockReset();
+    resetPasswordMock.mockReset();
   });
 
   it('registers a user and returns access token', async () => {
@@ -105,7 +111,8 @@ describe('Auth routes', () => {
 
     const response = await request(app)
       .post('/api/auth/refresh')
-      .set('Cookie', ['refreshToken=existing-refresh-token']);
+      .set('Cookie', ['refreshToken=existing-refresh-token', 'csrfToken=test-csrf-token'])
+      .set('x-csrf-token', 'test-csrf-token');
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
@@ -125,11 +132,43 @@ describe('Auth routes', () => {
 
     const response = await request(app)
       .post('/api/auth/logout')
-      .set('Cookie', ['refreshToken=existing-refresh-token']);
+      .set('Cookie', ['refreshToken=existing-refresh-token', 'csrfToken=test-csrf-token'])
+      .set('x-csrf-token', 'test-csrf-token');
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.data.message).toBe('Logged out successfully');
     expect(response.headers['set-cookie']).toBeDefined();
+  });
+
+  it('starts forgot password flow', async () => {
+    forgotPasswordMock.mockResolvedValue({
+      message: 'If an account exists for this email, a reset link has been generated.',
+      resetToken: 'reset-token',
+      expiresAt: new Date().toISOString(),
+    });
+
+    const response = await request(app).post('/api/auth/forgot-password').send({
+      email: 'asiful@example.com',
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.message).toBeDefined();
+  });
+
+  it('resets password with token', async () => {
+    resetPasswordMock.mockResolvedValue({
+      message: 'Password reset successful',
+    });
+
+    const response = await request(app).post('/api/auth/reset-password').send({
+      token: '59f6f24bc7f4c2b03261f4edfffd96ee1409c97ea5ecf7b54a2f14d0a5ca98e2',
+      newPassword: 'NewStrong@456',
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.message).toBe('Password reset successful');
   });
 });

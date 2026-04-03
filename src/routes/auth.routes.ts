@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller.js';
+import { authRateLimiter } from '../middleware/rateLimiter.middleware.js';
 import { validateBody } from '../middleware/validate.middleware.js';
-import { loginSchema, registerSchema } from '../validators/auth.validator.js';
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from '../validators/auth.validator.js';
 
 export const authRoutes = Router();
 
@@ -56,7 +62,12 @@ export const authRoutes = Router();
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-authRoutes.post('/register', validateBody(registerSchema), authController.register);
+authRoutes.post(
+  '/register',
+  authRateLimiter,
+  validateBody(registerSchema),
+  authController.register,
+);
 
 /**
  * @openapi
@@ -111,7 +122,7 @@ authRoutes.post('/register', validateBody(registerSchema), authController.regist
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-authRoutes.post('/login', validateBody(loginSchema), authController.login);
+authRoutes.post('/login', authRateLimiter, validateBody(loginSchema), authController.login);
 
 /**
  * @openapi
@@ -174,3 +185,52 @@ authRoutes.post('/refresh', authController.refresh);
  *         $ref: '#/components/responses/InternalServerError'
  */
 authRoutes.post('/logout', authController.logout);
+
+/**
+ * @openapi
+ * /api/auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Start forgot password flow
+ *     description: Generates a reset token if account exists and returns generic success response.
+ *     responses:
+ *       200:
+ *         description: Reset instructions accepted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessMessageResponse'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ */
+authRoutes.post(
+  '/forgot-password',
+  authRateLimiter,
+  validateBody(forgotPasswordSchema),
+  authController.forgotPassword,
+);
+
+/**
+ * @openapi
+ * /api/auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Reset password using reset token
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessMessageResponse'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+authRoutes.post(
+  '/reset-password',
+  authRateLimiter,
+  validateBody(resetPasswordSchema),
+  authController.resetPassword,
+);
