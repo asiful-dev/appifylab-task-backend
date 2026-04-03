@@ -112,6 +112,14 @@ const options: swaggerJsdoc.Options = {
             message: { type: 'string', example: 'Internal server error' },
           },
         },
+        ForbiddenErrorDetails: {
+          type: 'object',
+          required: ['code', 'message'],
+          properties: {
+            code: { type: 'string', example: 'ForbiddenError' },
+            message: { type: 'string', example: 'Access denied' },
+          },
+        },
         NotFoundErrorDetails: {
           type: 'object',
           required: ['code', 'message'],
@@ -194,6 +202,81 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        PostAuthor: {
+          type: 'object',
+          required: ['id', 'firstName', 'lastName'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            firstName: { type: 'string', example: 'Asiful' },
+            lastName: { type: 'string', example: 'Islam' },
+            profileImageUrl: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.supabase.co/storage/v1/object/public/avatars/path.png',
+            },
+          },
+        },
+        PostItem: {
+          type: 'object',
+          required: [
+            'id',
+            'authorId',
+            'visibility',
+            'likeCount',
+            'commentCount',
+            'createdAt',
+            'updatedAt',
+            'author',
+          ],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            authorId: { type: 'string', format: 'uuid' },
+            content: { type: 'string', nullable: true, example: 'Hello from BuddyScript' },
+            imageUrl: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.supabase.co/storage/v1/object/public/posts/path.png',
+            },
+            visibility: { type: 'string', enum: ['public', 'private'] },
+            likeCount: { type: 'integer', example: 0 },
+            commentCount: { type: 'integer', example: 0 },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+            author: { $ref: '#/components/schemas/PostAuthor' },
+          },
+        },
+        FeedMeta: {
+          type: 'object',
+          required: ['nextCursor', 'hasMore'],
+          properties: {
+            nextCursor: { type: 'string', nullable: true, format: 'uuid' },
+            hasMore: { type: 'boolean', example: false },
+          },
+        },
+        FeedData: {
+          type: 'object',
+          required: ['posts'],
+          properties: {
+            posts: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/PostItem' },
+            },
+          },
+        },
+        PostData: {
+          type: 'object',
+          required: ['post'],
+          properties: {
+            post: { $ref: '#/components/schemas/PostItem' },
+          },
+        },
+        UpdatePostRequest: {
+          type: 'object',
+          properties: {
+            content: { type: 'string', example: 'Updated post content' },
+            visibility: { type: 'string', enum: ['public', 'private'] },
+          },
+        },
         SuccessAuthSessionResponse: {
           type: 'object',
           required: ['success', 'data'],
@@ -224,6 +307,23 @@ const options: swaggerJsdoc.Options = {
           properties: {
             success: { type: 'boolean', example: true },
             data: { $ref: '#/components/schemas/AvatarUploadData' },
+          },
+        },
+        SuccessPostResponse: {
+          type: 'object',
+          required: ['success', 'data'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/PostData' },
+          },
+        },
+        SuccessFeedResponse: {
+          type: 'object',
+          required: ['success', 'data', 'meta'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/FeedData' },
+            meta: { $ref: '#/components/schemas/FeedMeta' },
           },
         },
         SuccessRefreshResponse: {
@@ -282,6 +382,14 @@ const options: swaggerJsdoc.Options = {
             error: { $ref: '#/components/schemas/NotFoundErrorDetails' },
           },
         },
+        ForbiddenErrorResponse: {
+          type: 'object',
+          required: ['success', 'error'],
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: { $ref: '#/components/schemas/ForbiddenErrorDetails' },
+          },
+        },
       },
       responses: {
         BadRequest: {
@@ -321,6 +429,14 @@ const options: swaggerJsdoc.Options = {
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/NotFoundErrorResponse' },
+            },
+          },
+        },
+        Forbidden: {
+          description: 'Forbidden action for current user',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ForbiddenErrorResponse' },
             },
           },
         },
