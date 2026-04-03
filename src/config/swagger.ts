@@ -112,12 +112,118 @@ const options: swaggerJsdoc.Options = {
             message: { type: 'string', example: 'Internal server error' },
           },
         },
+        NotFoundErrorDetails: {
+          type: 'object',
+          required: ['code', 'message'],
+          properties: {
+            code: { type: 'string', example: 'NotFoundError' },
+            message: { type: 'string', example: 'User not found' },
+          },
+        },
+        UpdateProfileRequest: {
+          type: 'object',
+          properties: {
+            firstName: { type: 'string', example: 'Asiful' },
+            lastName: { type: 'string', example: 'Islam' },
+            bio: { type: 'string', example: 'Full Stack Engineer candidate' },
+          },
+        },
+        ChangePasswordRequest: {
+          type: 'object',
+          required: ['currentPassword', 'newPassword'],
+          properties: {
+            currentPassword: { type: 'string', example: 'OldStrong@123' },
+            newPassword: { type: 'string', example: 'NewStrong@456' },
+          },
+        },
+        UserProfile: {
+          type: 'object',
+          required: ['id', 'firstName', 'lastName', 'email'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            firstName: { type: 'string', example: 'Asiful' },
+            lastName: { type: 'string', example: 'Islam' },
+            email: { type: 'string', format: 'email', example: 'asiful@example.com' },
+            bio: { type: 'string', nullable: true, example: 'Full Stack Engineer candidate' },
+            profileImageUrl: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.supabase.co/storage/v1/object/public/avatars/path.png',
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        PublicUserProfile: {
+          type: 'object',
+          required: ['id', 'firstName', 'lastName'],
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            firstName: { type: 'string', example: 'Asiful' },
+            lastName: { type: 'string', example: 'Islam' },
+            bio: { type: 'string', nullable: true, example: 'Full Stack Engineer candidate' },
+            profileImageUrl: {
+              type: 'string',
+              nullable: true,
+              example: 'https://example.supabase.co/storage/v1/object/public/avatars/path.png',
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        UserProfileData: {
+          type: 'object',
+          required: ['user'],
+          properties: {
+            user: { $ref: '#/components/schemas/UserProfile' },
+          },
+        },
+        PublicUserData: {
+          type: 'object',
+          required: ['user'],
+          properties: {
+            user: { $ref: '#/components/schemas/PublicUserProfile' },
+          },
+        },
+        AvatarUploadData: {
+          type: 'object',
+          required: ['profileImageUrl'],
+          properties: {
+            profileImageUrl: {
+              type: 'string',
+              example: 'https://example.supabase.co/storage/v1/object/public/avatars/path.png',
+            },
+          },
+        },
         SuccessAuthSessionResponse: {
           type: 'object',
           required: ['success', 'data'],
           properties: {
             success: { type: 'boolean', example: true },
             data: { $ref: '#/components/schemas/AuthSessionData' },
+          },
+        },
+        SuccessUserProfileResponse: {
+          type: 'object',
+          required: ['success', 'data'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/UserProfileData' },
+          },
+        },
+        SuccessPublicUserResponse: {
+          type: 'object',
+          required: ['success', 'data'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/PublicUserData' },
+          },
+        },
+        SuccessAvatarUploadResponse: {
+          type: 'object',
+          required: ['success', 'data'],
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/AvatarUploadData' },
           },
         },
         SuccessRefreshResponse: {
@@ -168,6 +274,14 @@ const options: swaggerJsdoc.Options = {
             error: { $ref: '#/components/schemas/InternalServerErrorDetails' },
           },
         },
+        NotFoundErrorResponse: {
+          type: 'object',
+          required: ['success', 'error'],
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: { $ref: '#/components/schemas/NotFoundErrorDetails' },
+          },
+        },
       },
       responses: {
         BadRequest: {
@@ -199,6 +313,14 @@ const options: swaggerJsdoc.Options = {
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/InternalServerErrorResponse' },
+            },
+          },
+        },
+        NotFound: {
+          description: 'Requested resource not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/NotFoundErrorResponse' },
             },
           },
         },
