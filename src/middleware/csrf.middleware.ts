@@ -20,6 +20,13 @@ export const csrfProtection = (req: Request, _res: Response, next: NextFunction)
     return next();
   }
 
+  // Allow the refresh endpoint to bootstrap a new CSRF cookie when the client
+  // no longer has one. The refresh call itself is still protected by the
+  // refresh-token cookie and is made with credentials included from the frontend.
+  if (req.path === '/auth/refresh') {
+    return next();
+  }
+
   const hasRefreshCookie = Boolean(req.cookies?.refreshToken);
   if (!hasRefreshCookie) {
     return next();
