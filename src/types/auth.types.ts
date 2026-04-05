@@ -25,6 +25,7 @@ export interface AuthUserResponse {
   firstName: string;
   lastName: string;
   email: string;
+  profileImageUrl: string | null;
 }
 
 export interface AuthTokens {

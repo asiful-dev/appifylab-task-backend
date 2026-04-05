@@ -13,6 +13,7 @@ export interface CreatePostInput {
 export interface UpdatePostInput {
   content?: string;
   visibility?: PostVisibility;
+  removeImage?: boolean;
 }
 
 export interface PostAuthor {

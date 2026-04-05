@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import { env } from '../config/env.js';
 import { users } from '../db/schema/schema.js';
+import { withRetry } from '../utils/db-utils.js';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../utils/errorTypes.js';
 import { comparePassword, hashPassword } from '../utils/password.js';
 import {
@@ -87,22 +88,25 @@ const uploadAvatarToSupabase = async (userId: string, file: Express.Multer.File)
 
 export const userService = {
   async getMe(userId: string) {
-    const rows = await db
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-        bio: users.bio,
-        profileImageUrl: users.profileImageUrl,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+    const user = await withRetry(async () => {
+      const rows = await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          bio: users.bio,
+          profileImageUrl: users.profileImageUrl,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
 
-    const user = rows[0];
+      return rows[0];
+    });
+
     if (!user) {
       throw new NotFoundError('User');
     }
@@ -111,25 +115,28 @@ export const userService = {
   },
 
   async updateMe(userId: string, input: UpdateProfileInput) {
-    const updatedRows = await db
-      .update(users)
-      .set({
-        ...input,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId))
-      .returning({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-        bio: users.bio,
-        profileImageUrl: users.profileImageUrl,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      });
+    const user = await withRetry(async () => {
+      const updatedRows = await db
+        .update(users)
+        .set({
+          ...input,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId))
+        .returning({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          bio: users.bio,
+          profileImageUrl: users.profileImageUrl,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        });
 
-    const user = updatedRows[0];
+      return updatedRows[0];
+    });
+
     if (!user) {
       throw new NotFoundError('User');
     }
@@ -144,16 +151,19 @@ export const userService = {
 
     const profileImageUrl = await uploadAvatarToSupabase(userId, file);
 
-    const updatedRows = await db
-      .update(users)
-      .set({
-        profileImageUrl,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId))
-      .returning({ profileImageUrl: users.profileImageUrl });
+    const updated = await withRetry(async () => {
+      const updatedRows = await db
+        .update(users)
+        .set({
+          profileImageUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId))
+        .returning({ profileImageUrl: users.profileImageUrl });
 
-    const updated = updatedRows[0];
+      return updatedRows[0];
+    });
+
     if (!updated) {
       throw new NotFoundError('User');
     }
@@ -164,16 +174,19 @@ export const userService = {
   },
 
   async changePassword(userId: string, input: ChangePasswordInput) {
-    const rows = await db
-      .select({
-        id: users.id,
-        passwordHash: users.passwordHash,
-      })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+    const user = await withRetry(async () => {
+      const rows = await db
+        .select({
+          id: users.id,
+          passwordHash: users.passwordHash,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
 
-    const user = rows[0];
+      return rows[0];
+    });
+
     if (!user) {
       throw new NotFoundError('User');
     }
@@ -185,13 +198,15 @@ export const userService = {
 
     const newPasswordHash = await hashPassword(input.newPassword);
 
-    await db
-      .update(users)
-      .set({
-        passwordHash: newPasswordHash,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
+    await withRetry(() =>
+      db
+        .update(users)
+        .set({
+          passwordHash: newPasswordHash,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId)),
+    );
 
     return {
       message: 'Password updated successfully',
@@ -199,20 +214,23 @@ export const userService = {
   },
 
   async getPublicUser(userId: string) {
-    const rows = await db
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        bio: users.bio,
-        profileImageUrl: users.profileImageUrl,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+    const user = await withRetry(async () => {
+      const rows = await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          bio: users.bio,
+          profileImageUrl: users.profileImageUrl,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
 
-    const user = rows[0];
+      return rows[0];
+    });
+
     if (!user) {
       throw new NotFoundError('User');
     }

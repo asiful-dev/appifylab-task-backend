@@ -1,5 +1,8 @@
+import { setDefaultResultOrder } from 'node:dns';
 import app from './app.js';
 import { env } from './config/env.js';
+
+setDefaultResultOrder('ipv4first');
 
 /**
  * Start the server

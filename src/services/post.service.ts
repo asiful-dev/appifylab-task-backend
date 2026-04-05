@@ -2,6 +2,7 @@ import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import { env } from '../config/env.js';
 import { posts, users } from '../db/schema/schema.js';
+import { withRetry } from '../utils/db-utils.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errorTypes.js';
 import {
   CreatePostInput,
@@ -77,37 +78,39 @@ const toPostItem = (row: {
 });
 
 const fetchPosts = async (whereClause: any, limit: number) => {
-  const rows = await db
-    .select({
-      id: posts.id,
-      authorId: posts.authorId,
-      content: posts.content,
-      imageUrl: posts.imageUrl,
-      visibility: posts.visibility,
-      likeCount: posts.likeCount,
-      commentCount: posts.commentCount,
-      createdAt: posts.createdAt,
-      updatedAt: posts.updatedAt,
-      authorIdFromUser: users.id,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      profileImageUrl: users.profileImageUrl,
-    })
-    .from(posts)
-    .innerJoin(users, eq(posts.authorId, users.id))
-    .where(whereClause)
-    .orderBy(desc(posts.createdAt), desc(posts.id))
-    .limit(limit + 1);
+  return withRetry(async () => {
+    const rows = await db
+      .select({
+        id: posts.id,
+        authorId: posts.authorId,
+        content: posts.content,
+        imageUrl: posts.imageUrl,
+        visibility: posts.visibility,
+        likeCount: posts.likeCount,
+        commentCount: posts.commentCount,
+        createdAt: posts.createdAt,
+        updatedAt: posts.updatedAt,
+        authorIdFromUser: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+      })
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .where(whereClause)
+      .orderBy(desc(posts.createdAt), desc(posts.id))
+      .limit(limit + 1);
 
-  const hasMore = rows.length > limit;
-  const selectedRows = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore ? (selectedRows[selectedRows.length - 1]?.id ?? null) : null;
+    const hasMore = rows.length > limit;
+    const selectedRows = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? (selectedRows[selectedRows.length - 1]?.id ?? null) : null;
 
-  return {
-    posts: selectedRows.map(toPostItem),
-    nextCursor,
-    hasMore,
-  } satisfies FeedResponse;
+    return {
+      posts: selectedRows.map(toPostItem),
+      nextCursor,
+      hasMore,
+    } satisfies FeedResponse;
+  });
 };
 
 export const postService = {
@@ -116,13 +119,16 @@ export const postService = {
 
     let cursorCondition;
     if (query.cursor) {
-      const cursorRow = await db
-        .select({ id: posts.id, createdAt: posts.createdAt })
-        .from(posts)
-        .where(eq(posts.id, query.cursor))
-        .limit(1);
+      const cursorPost = await withRetry(async () => {
+        const cursorRow = await db
+          .select({ id: posts.id, createdAt: posts.createdAt })
+          .from(posts)
+          .where(eq(posts.id, query.cursor!))
+          .limit(1);
 
-      const cursorPost = cursorRow[0];
+        return cursorRow[0];
+      });
+
       if (cursorPost) {
         cursorCondition = sql`(${posts.createdAt}, ${posts.id}) < (${cursorPost.createdAt}, ${cursorPost.id})`;
       }
@@ -146,17 +152,20 @@ export const postService = {
 
     const imageUrl = file ? await uploadPostImageToSupabase(requesterId, file) : null;
 
-    const insertedRows = await db
-      .insert(posts)
-      .values({
-        authorId: requesterId,
-        content: input.content ?? null,
-        imageUrl,
-        visibility: input.visibility ?? 'public',
-      })
-      .returning({ id: posts.id });
+    const inserted = await withRetry(async () => {
+      const insertedRows = await db
+        .insert(posts)
+        .values({
+          authorId: requesterId,
+          content: input.content ?? null,
+          imageUrl,
+          visibility: input.visibility ?? 'public',
+        })
+        .returning({ id: posts.id });
 
-    const inserted = insertedRows[0];
+      return insertedRows[0];
+    });
+
     if (!inserted) {
       throw new ValidationError('Failed to create post');
     }
@@ -165,28 +174,31 @@ export const postService = {
   },
 
   async getPostById(requesterId: string, postId: string) {
-    const rows = await db
-      .select({
-        id: posts.id,
-        authorId: posts.authorId,
-        content: posts.content,
-        imageUrl: posts.imageUrl,
-        visibility: posts.visibility,
-        likeCount: posts.likeCount,
-        commentCount: posts.commentCount,
-        createdAt: posts.createdAt,
-        updatedAt: posts.updatedAt,
-        authorIdFromUser: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        profileImageUrl: users.profileImageUrl,
-      })
-      .from(posts)
-      .innerJoin(users, eq(posts.authorId, users.id))
-      .where(eq(posts.id, postId))
-      .limit(1);
+    const post = await withRetry(async () => {
+      const rows = await db
+        .select({
+          id: posts.id,
+          authorId: posts.authorId,
+          content: posts.content,
+          imageUrl: posts.imageUrl,
+          visibility: posts.visibility,
+          likeCount: posts.likeCount,
+          commentCount: posts.commentCount,
+          createdAt: posts.createdAt,
+          updatedAt: posts.updatedAt,
+          authorIdFromUser: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        })
+        .from(posts)
+        .innerJoin(users, eq(posts.authorId, users.id))
+        .where(eq(posts.id, postId))
+        .limit(1);
 
-    const post = rows[0];
+      return rows[0];
+    });
+
     if (!post) {
       throw new NotFoundError('Post');
     }
@@ -198,14 +210,22 @@ export const postService = {
     return toPostItem(post);
   },
 
-  async updatePost(requesterId: string, postId: string, input: UpdatePostInput) {
-    const existingRows = await db
-      .select({ id: posts.id, authorId: posts.authorId })
-      .from(posts)
-      .where(eq(posts.id, postId))
-      .limit(1);
+  async updatePost(
+    requesterId: string,
+    postId: string,
+    input: UpdatePostInput,
+    file?: Express.Multer.File,
+  ) {
+    const existing = await withRetry(async () => {
+      const existingRows = await db
+        .select({ id: posts.id, authorId: posts.authorId })
+        .from(posts)
+        .where(eq(posts.id, postId))
+        .limit(1);
 
-    const existing = existingRows[0];
+      return existingRows[0];
+    });
+
     if (!existing) {
       throw new NotFoundError('Post');
     }
@@ -214,26 +234,45 @@ export const postService = {
       throw new ForbiddenError('You can only update your own post');
     }
 
-    await db
-      .update(posts)
-      .set({
-        ...input,
-        content: input.content ?? null,
-        updatedAt: new Date(),
-      })
-      .where(eq(posts.id, postId));
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
+
+    if (input.content !== undefined) {
+      updateData.content = input.content;
+    }
+
+    if (input.visibility !== undefined) {
+      updateData.visibility = input.visibility;
+    }
+
+    const imageUrl = file ? await uploadPostImageToSupabase(requesterId, file) : undefined;
+    if (imageUrl !== undefined) {
+      updateData.imageUrl = imageUrl;
+    } else if (input.removeImage === true) {
+      updateData.imageUrl = null;
+    }
+
+    if (Object.keys(updateData).length === 1) {
+      throw new ValidationError('At least one field is required for update');
+    }
+
+    await withRetry(() => db.update(posts).set(updateData).where(eq(posts.id, postId)));
 
     return this.getPostById(requesterId, postId);
   },
 
   async deletePost(requesterId: string, postId: string) {
-    const existingRows = await db
-      .select({ id: posts.id, authorId: posts.authorId })
-      .from(posts)
-      .where(eq(posts.id, postId))
-      .limit(1);
+    const existing = await withRetry(async () => {
+      const existingRows = await db
+        .select({ id: posts.id, authorId: posts.authorId })
+        .from(posts)
+        .where(eq(posts.id, postId))
+        .limit(1);
 
-    const existing = existingRows[0];
+      return existingRows[0];
+    });
+
     if (!existing) {
       throw new NotFoundError('Post');
     }
@@ -242,7 +281,7 @@ export const postService = {
       throw new ForbiddenError('You can only delete your own post');
     }
 
-    await db.delete(posts).where(eq(posts.id, postId));
+    await withRetry(() => db.delete(posts).where(eq(posts.id, postId)));
   },
 
   async getUserPosts(requesterId: string, targetUserId: string, query: FeedQueryInput) {
@@ -250,13 +289,16 @@ export const postService = {
 
     let cursorCondition;
     if (query.cursor) {
-      const cursorRow = await db
-        .select({ id: posts.id, createdAt: posts.createdAt })
-        .from(posts)
-        .where(eq(posts.id, query.cursor))
-        .limit(1);
+      const cursorPost = await withRetry(async () => {
+        const cursorRow = await db
+          .select({ id: posts.id, createdAt: posts.createdAt })
+          .from(posts)
+          .where(eq(posts.id, query.cursor!))
+          .limit(1);
 
-      const cursorPost = cursorRow[0];
+        return cursorRow[0];
+      });
+
       if (cursorPost) {
         cursorCondition = sql`(${posts.createdAt}, ${posts.id}) < (${cursorPost.createdAt}, ${cursorPost.id})`;
       }

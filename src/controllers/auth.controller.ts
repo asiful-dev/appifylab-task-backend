@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env.js';
-import { createCsrfToken, getCsrfCookieOptions } from '../middleware/csrf.middleware.js';
 import { authService } from '../services/auth.service.js';
 import {
   ForgotPasswordInput,
@@ -11,7 +10,6 @@ import {
 import { UnauthorizedError } from '../utils/errorTypes.js';
 
 const REFRESH_COOKIE_NAME = 'refreshToken';
-const CSRF_COOKIE_NAME = 'csrfToken';
 
 const parseDurationToMs = (value: string) => {
   const match = value.match(/^(\d+)([smhd])$/);
@@ -47,7 +45,6 @@ export const authController = {
         session.tokens.refreshToken,
         getRefreshCookieConfig(parseDurationToMs(env.JWT_REFRESH_EXPIRY)),
       );
-      res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), getCsrfCookieOptions());
 
       res.status(201).json({
         success: true,
@@ -71,7 +68,6 @@ export const authController = {
         : parseDurationToMs(env.JWT_REFRESH_EXPIRY);
 
       res.cookie(REFRESH_COOKIE_NAME, session.tokens.refreshToken, getRefreshCookieConfig(maxAge));
-      res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), getCsrfCookieOptions());
 
       res.status(200).json({
         success: true,
@@ -100,11 +96,11 @@ export const authController = {
         session.tokens.refreshToken,
         getRefreshCookieConfig(parseDurationToMs(env.JWT_REFRESH_EXPIRY)),
       );
-      res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), getCsrfCookieOptions());
 
       res.status(200).json({
         success: true,
         data: {
+          user: session.user,
           accessToken: session.tokens.accessToken,
         },
       });
@@ -122,7 +118,6 @@ export const authController = {
         REFRESH_COOKIE_NAME,
         getRefreshCookieConfig(parseDurationToMs(env.JWT_REFRESH_EXPIRY)),
       );
-      res.clearCookie(CSRF_COOKIE_NAME, getCsrfCookieOptions());
 
       res.status(200).json({
         success: true,

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { MulterError } from 'multer';
 import { AppError } from '../utils/errorTypes.js';
 import { env } from '../config/env.js';
 
@@ -26,6 +27,25 @@ export const errorHandler = (
       error: {
         code: error.name,
         message: error.message,
+      },
+    });
+  }
+
+  if (error instanceof MulterError) {
+    const expectedField = req.path.includes('/users/me/avatar')
+      ? 'avatar'
+      : req.path.includes('/posts')
+        ? 'image'
+        : undefined;
+
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: 'UPLOAD_ERROR',
+        message:
+          error.code === 'LIMIT_UNEXPECTED_FILE' && expectedField
+            ? `Unexpected upload field. Please use "${expectedField}" as the file field name.`
+            : error.message,
       },
     });
   }

@@ -91,8 +91,16 @@ export const postController = {
     try {
       const userId = getAuthUserId(req);
       const postId = getParam(req.params.id, 'id');
-      const input = req.body;
-      const post = await postService.updatePost(userId, postId, input);
+      const bodyParsed = updatePostSchema.safeParse(req.body);
+      if (!bodyParsed.success) {
+        throw new ValidationError(bodyParsed.error.issues.map((issue) => issue.message).join(', '));
+      }
+
+      if (bodyParsed.data.removeImage && req.file) {
+        throw new ValidationError('Provide either removeImage=true or image file, not both');
+      }
+
+      const post = await postService.updatePost(userId, postId, bodyParsed.data, req.file);
 
       res.status(200).json({
         success: true,

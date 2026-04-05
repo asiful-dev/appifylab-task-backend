@@ -1,4 +1,9 @@
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const envFilePath = resolve(dirname(fileURLToPath(import.meta.url)), '../../.env');
+loadEnv({ path: envFilePath, override: true });
 
 /**
  * Validate and export environment variables

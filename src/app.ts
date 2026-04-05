@@ -6,7 +6,6 @@ import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import { openApiSpec } from './config/swagger.js';
-import { csrfProtection } from './middleware/csrf.middleware.js';
 import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiRateLimiter } from './middleware/rateLimiter.middleware.js';
@@ -52,7 +51,6 @@ if (env.NODE_ENV === 'production') {
 }
 app.use(requestLogger);
 app.use('/api', apiRateLimiter);
-app.use('/api', csrfProtection);
 
 app.use('/api', apiRouter);
 

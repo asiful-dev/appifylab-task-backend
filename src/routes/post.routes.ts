@@ -2,8 +2,6 @@ import { Router } from 'express';
 import { postController } from '../controllers/post.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { postImageUpload } from '../middleware/upload.middleware.js';
-import { validateBody } from '../middleware/validate.middleware.js';
-import { updatePostSchema } from '../validators/post.validator.js';
 
 export const postRoutes = Router();
 
@@ -125,9 +123,20 @@ postRoutes.get('/:id', authenticateToken, postController.getPostById);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/UpdatePostRequest'
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: string
+ *               visibility:
+ *                 type: string
+ *                 enum: [public, private]
+ *               removeImage:
+ *                 type: boolean
+ *               image:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Updated post
@@ -147,7 +156,7 @@ postRoutes.get('/:id', authenticateToken, postController.getPostById);
 postRoutes.patch(
   '/:id',
   authenticateToken,
-  validateBody(updatePostSchema),
+  postImageUpload.single('image'),
   postController.updatePost,
 );
 
