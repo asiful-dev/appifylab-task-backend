@@ -70,6 +70,72 @@ backend/
 └─ vercel.json
 ```
 
+## 4.1) Entity Relationship Diagram (from PRD)
+
+```mermaid
+erDiagram
+  USERS ||--o{ POSTS : creates
+  USERS ||--o{ COMMENTS : writes
+  USERS ||--o{ LIKES : gives
+  USERS ||--o{ REFRESH_TOKENS : has
+  POSTS ||--o{ COMMENTS : has
+  POSTS ||--o{ LIKES : receives
+  COMMENTS ||--o{ COMMENTS : "has replies"
+  COMMENTS ||--o{ LIKES : receives
+
+  USERS {
+    uuid id PK
+    varchar first_name
+    varchar last_name
+    varchar email UK
+    varchar password_hash
+    text bio
+    varchar profile_image_url
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  POSTS {
+    uuid id PK
+    uuid author_id FK
+    text content
+    varchar image_url
+    enum visibility
+    integer like_count
+    integer comment_count
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  COMMENTS {
+    uuid id PK
+    uuid post_id FK
+    uuid author_id FK
+    uuid parent_id FK
+    text content
+    integer like_count
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  LIKES {
+    uuid id PK
+    uuid user_id FK
+    uuid target_id
+    enum target_type
+    timestamp created_at
+  }
+
+  REFRESH_TOKENS {
+    uuid id PK
+    uuid user_id FK
+    varchar token_hash
+    timestamp expires_at
+    boolean is_revoked
+    timestamp created_at
+  }
+```
+
 ## 5) Local setup and run guide
 
 ### Prerequisites
